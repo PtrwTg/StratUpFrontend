@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start_UP Parameters</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+        }
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            padding: 12px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 50px 0 0 50px;
+            width: 60%;
+            outline: none;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 0 50px 50px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        #result {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .machine-details {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+        .machine-details h2 {
+            color: #4a5568;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+        .machine-details h3 {
+            color: #667eea;
+            font-size: 1.4em;
+            margin-bottom: 10px;
+        }
+        .parameters {
+            background-color: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .parameter-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .parameter-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .parameter-name {
+            font-weight: bold;
+            color: #4a5568;
+        }
+        .parameter-value {
+            color: #667eea;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #result > div {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .throughput {
+            color: orange;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 START_UP Parameters ⚙️</h1>
+        <form id="productForm">
+            <input type="text" id="product_name" name="product_name" placeholder="ใส่ชื่อผลิตภัณฑ์ เช่น JA004TH" required>
+            <button type="submit">ค้นหา</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('productForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const productName = document.getElementById('product_name').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p style="text-align: center;">กำลังโหลด...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/rank_product/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_name: productName }),
+                });
+    
+                if (!response.ok) throw new Error('ไม่พบข้อมูลผลิตภัณฑ์');
+    
+                const data = await response.json();
+                
+                function renderParameters(parameters) {
+                    return Object.entries(parameters).map(([key, value]) => `
+                        <div class="parameter-item">
+                            <span class="parameter-name">${key}</span>
+                            <span class="parameter-value">${value}</span>
+                        </div>
+                    `).join('');
+                }
+    
+                resultDiv.innerHTML = `
+                <div class="parameters">
+                            <h3 class="throughput">Throughput mill (kg/h): ${data.mill.Throughput}</h3>
+                        </div>
+                    <div class="machine-details">
+                        <h2>🔧 Extrude Parameters Setting</h2>
+                        <h3>Extrude No.: ${data.extrude["Machine no."]}</h3>
+                        <div class="parameters">
+                            <h3>พารามิเตอร์</h3>
+                            ${renderParameters(data.extrude.Parameters)}
+                        </div>
+                    </div>
+                    <div class="machine-details">
+                        <h2>⚙️ Mill Parameters Setting</h2>
+                        <h3>Mill No.: ${data.mill["Machine no."]}</h3>
+                        <div class="parameters">
+                            <h3>พารามิเตอร์</h3>
+                            ${renderParameters(data.mill.Parameters)}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red; text-align: center;">${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
